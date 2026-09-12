@@ -2,14 +2,14 @@
 
 An independent TypeScript/LangGraph.js portfolio project inspired by the architecture of the original Python multi-agent project, rebuilt from scratch for Node.js.
 
-## Phase 1 Scope
+## Current Scope
 
 Implemented:
 
 - Strict TypeScript project scaffold
-- Minimal LangGraph.js graph: `START -> planner -> END`
-- Strongly typed graph state with `messages`, `userQuery`, `generatedOutput`, and `error`
-- Planner agent runnable from the terminal
+- LangGraph.js graph with supervisor routing to `planner`, `researcher`, or `weather`
+- Strongly typed graph state with messages, routing metadata, specialist outputs, generated output, and error handling
+- Supervisor-routed agents runnable from the terminal
 - Zod-based environment validation
 - Deterministic fallback when `GEMINI_API_KEY` is not set
 - Optional Gemini support through `ChatGoogleGenerativeAI` when `GEMINI_API_KEY` is available
@@ -17,7 +17,6 @@ Implemented:
 Intentionally not implemented yet:
 
 - MCP client/server behavior
-- Supervisor routing
 - Guardrails
 - Human-in-the-loop flows
 - Persistence
@@ -28,10 +27,11 @@ Intentionally not implemented yet:
 
 ```bash
 npm install
-cp .env.example .env
 npm run typecheck
 npm run dev
 ```
+
+Add required variables to your local `.env` file when you want live Gemini calls.
 
 Run with a custom prompt:
 
@@ -39,7 +39,7 @@ Run with a custom prompt:
 npm run dev -- "Plan a research workflow for weather-aware travel."
 ```
 
-Without an API key, the planner returns a deterministic local response. With `GEMINI_API_KEY` set, it uses Gemini through LangChain.js.
+Without an API key, the graph returns deterministic local responses. With `GEMINI_API_KEY` set, supervisor and specialist agents can use Gemini through LangChain.js.
 
 ## Environment
 
@@ -59,6 +59,7 @@ src/
     weather.agent.ts
   config/
     env.ts
+    llm.ts
   graph/
     graph.ts
     routes.ts
@@ -77,22 +78,29 @@ src/
 
 ## Git Procedure
 
-Use this flow from your side:
+Use this pull request flow from your side:
 
 ```bash
 git checkout main
-git pull --ff-only
-git checkout -b phase-1-langgraph-scaffold
+git pull origin main
+git checkout -b phase-2-supervisor-routing
+
+# code changes
+
 npm install
 npm run typecheck
 npm run dev
 git status
 git add .
-git commit -m "Add TypeScript LangGraph scaffold with planner graph"
+git commit -m "Add supervisor routing with specialist agents"
+git push -u origin phase-2-supervisor-routing
+```
+
+After the GitHub PR is merged:
+
+```bash
 git checkout main
-git pull --ff-only
-git merge --ff-only phase-1-langgraph-scaffold
-git push origin main
+git pull origin main
 ```
 
 After merging each phase, return to `main` and sync before starting the next branch.

@@ -1,1 +1,5 @@
-export const routePlaceholder = "Phase 2 placeholder: graph routing is not implemented yet.";
+import type { AgentState } from "./state.js";
+import type { AgentName } from "./types.js";
+
+export const routeFromSupervisor = (state: AgentState): AgentName =>
+  state.selectedAgent ?? "planner";
