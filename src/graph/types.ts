@@ -9,10 +9,17 @@ export type SupervisorDecision = {
   reason: string;
 };
 
+export type GuardrailDecision = {
+  allowed: boolean;
+  reason: string;
+};
+
 export type AgentGraphState = {
   messages: BaseMessage[];
   userQuery: string;
   generatedOutput: string;
+  guardrailAllowed: boolean;
+  guardrailReason: string;
   selectedAgent?: AgentName;
   supervisorReasoning: string;
   plannerOutput: string;

@@ -16,6 +16,14 @@ export const AgentStateAnnotation = Annotation.Root({
     reducer: (_current, update) => update,
     default: () => ""
   }),
+  guardrailAllowed: Annotation<boolean>({
+    reducer: (_current, update) => update,
+    default: () => true
+  }),
+  guardrailReason: Annotation<string>({
+    reducer: (_current, update) => update,
+    default: () => ""
+  }),
   selectedAgent: Annotation<AgentName | undefined>({
     reducer: (_current, update) => update,
     default: () => undefined
