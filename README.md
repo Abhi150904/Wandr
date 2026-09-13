@@ -7,8 +7,8 @@ An independent TypeScript/LangGraph.js portfolio project inspired by the archite
 Implemented:
 
 - Strict TypeScript project scaffold
-- LangGraph.js graph with supervisor routing to `planner`, `researcher`, or `weather`
-- Strongly typed graph state with messages, routing metadata, specialist outputs, generated output, and error handling
+- LangGraph.js graph with input guardrails and supervisor routing to `planner`, `researcher`, or `weather`
+- Strongly typed graph state with messages, guardrail metadata, routing metadata, specialist outputs, generated output, and error handling
 - Supervisor-routed agents runnable from the terminal
 - Zod-based environment validation
 - Deterministic fallback when `GEMINI_API_KEY` is not set
@@ -17,7 +17,6 @@ Implemented:
 Intentionally not implemented yet:
 
 - MCP client/server behavior
-- Guardrails
 - Human-in-the-loop flows
 - Persistence
 - API layer
@@ -39,7 +38,7 @@ Run with a custom prompt:
 npm run dev -- "Plan a research workflow for weather-aware travel."
 ```
 
-Without an API key, the graph returns deterministic local responses. With `GEMINI_API_KEY` set, supervisor and specialist agents can use Gemini through LangChain.js.
+Without an API key, the graph returns deterministic local responses. With `GEMINI_API_KEY` set, guardrail, supervisor, and specialist agents can use Gemini through LangChain.js.
 
 ## Environment
 
@@ -83,7 +82,7 @@ Use this pull request flow from your side:
 ```bash
 git checkout main
 git pull origin main
-git checkout -b phase-2-supervisor-routing
+git checkout -b phase-3-input-guardrails
 
 # code changes
 
@@ -92,8 +91,8 @@ npm run typecheck
 npm run dev
 git status
 git add .
-git commit -m "Add supervisor routing with specialist agents"
-git push -u origin phase-2-supervisor-routing
+git commit -m "Add input guardrails before supervisor routing"
+git push -u origin phase-3-input-guardrails
 ```
 
 After the GitHub PR is merged:

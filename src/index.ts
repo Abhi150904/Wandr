@@ -10,6 +10,8 @@ const result = await agentGraph.invoke({
   messages: [new HumanMessage(userQuery)],
   userQuery,
   generatedOutput: "",
+  guardrailAllowed: true,
+  guardrailReason: "",
   supervisorReasoning: "",
   plannerOutput: "",
   researcherOutput: "",
@@ -22,8 +24,17 @@ if (result.error && !result.generatedOutput) {
   process.exitCode = 1;
 } else {
   if (result.error) {
-    console.warn(`Warning: ${result.error}`);
+    console.warn("Warning: Gemini unavailable; using deterministic fallback.");
     console.log("");
+  }
+
+  console.log(`Guardrail: ${result.guardrailAllowed ? "allowed" : "blocked"}`);
+  console.log(`Guardrail reason: ${result.guardrailReason}`);
+  console.log("");
+
+  if (!result.guardrailAllowed) {
+    console.log(result.generatedOutput);
+    process.exit(0);
   }
 
   console.log(`Selected agent: ${result.selectedAgent ?? "planner"}`);
