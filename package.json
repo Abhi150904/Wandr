@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx src/index.ts",
+    "mcp:weather": "tsx src/mcp/servers/weather.server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
