@@ -26,7 +26,7 @@ const extractCity = (userQuery: string): string => {
 
 const formatWeatherReport = (weather: WeatherReport, userQuery: string): string =>
   [
-    `Mock MCP weather for ${weather.city}`,
+    `MCP weather for ${weather.city}`,
     `Request: ${userQuery}`,
     `Condition: ${weather.condition}`,
     `Temperature: ${weather.temperatureC}C`,
@@ -34,7 +34,7 @@ const formatWeatherReport = (weather: WeatherReport, userQuery: string): string 
     `Wind: ${weather.windKph} kph`,
     "Packing advice:",
     ...weather.packingAdvice.map((item) => `- ${item}`),
-    "Source: deterministic mock MCP weather server"
+    `Source: ${weather.source}`
   ].join("\n");
 
 export const weatherAgent = async (state: AgentState): Promise<AgentStateUpdate> => {
@@ -43,21 +43,32 @@ export const weatherAgent = async (state: AgentState): Promise<AgentStateUpdate>
     const weather = await getWeatherFromMcp(city);
     const mcpWeatherOutput = formatWeatherReport(weather, state.userQuery);
 
-    const generatedOutput =
-      (await invokeGeminiText(
-        [
-          "You are a weather-aware travel planning agent.",
-          "Use the provided mock MCP weather report as the weather source.",
-          "Do not invent live forecast data."
-        ].join("\n"),
-        `${mcpWeatherOutput}\n\nUser request:\n${state.userQuery}`
-      )) ?? mcpWeatherOutput;
+    try {
+      const generatedOutput =
+        (await invokeGeminiText(
+          [
+            "You are a weather-aware travel planning agent.",
+            "Use the provided MCP weather report as the weather source.",
+            "Do not invent live forecast data."
+          ].join("\n"),
+          `${mcpWeatherOutput}\n\nUser request:\n${state.userQuery}`
+        )) ?? mcpWeatherOutput;
 
-    return {
-      generatedOutput,
-      weatherOutput: generatedOutput,
-      messages: [new AIMessage(generatedOutput)]
-    };
+      return {
+        generatedOutput,
+        weatherOutput: generatedOutput,
+        messages: [new AIMessage(generatedOutput)]
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown Gemini weather response error";
+
+      return {
+        error: message,
+        generatedOutput: mcpWeatherOutput,
+        weatherOutput: mcpWeatherOutput,
+        messages: [new AIMessage(`Weather MCP output used after Gemini error: ${message}`)]
+      };
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown weather agent error";
     const generatedOutput = fallbackWeatherGuidance(state.userQuery);
