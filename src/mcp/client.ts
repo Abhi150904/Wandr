@@ -27,7 +27,7 @@ export const getWeatherFromMcp = async (city: string): Promise<WeatherReport> =>
     await client.connect(transport);
 
     const result = await client.callTool({
-      name: "get_mock_weather",
+      name: "get_current_weather",
       arguments: { city }
     });
 

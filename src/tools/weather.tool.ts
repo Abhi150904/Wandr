@@ -11,7 +11,7 @@ export const weatherReportSchema = z.object({
   humidityPercent: z.number().int().min(0).max(100),
   windKph: z.number(),
   packingAdvice: z.array(z.string()),
-  source: z.literal("mock-mcp-weather")
+  source: z.enum(["openweather", "mock-mcp-weather"])
 });
 
 export type WeatherToolInput = z.infer<typeof weatherToolInputSchema>;
@@ -50,6 +50,34 @@ const weatherProfiles = [
 
 const hashCity = (city: string): number =>
   [...city.toLowerCase()].reduce((hash, char) => hash + char.charCodeAt(0), 0);
+
+export const buildPackingAdvice = (temperatureC: number, condition: string): string[] => {
+  const normalizedCondition = condition.toLowerCase();
+  const advice: string[] = [];
+
+  if (temperatureC >= 30) {
+    advice.push("Wear breathable clothing.");
+    advice.push("Prioritize hydration.");
+  } else if (temperatureC <= 12) {
+    advice.push("Pack warm layers.");
+  } else {
+    advice.push("Pack comfortable layers.");
+  }
+
+  if (normalizedCondition.includes("rain") || normalizedCondition.includes("drizzle")) {
+    advice.push("Carry a compact umbrella or rain jacket.");
+  }
+
+  if (normalizedCondition.includes("snow")) {
+    advice.push("Choose insulated, water-resistant shoes.");
+  }
+
+  if (normalizedCondition.includes("clear")) {
+    advice.push("Carry sunglasses.");
+  }
+
+  return advice;
+};
 
 export const getMockWeather = (input: WeatherToolInput): WeatherReport => {
   const parsedInput = weatherToolInputSchema.parse(input);
