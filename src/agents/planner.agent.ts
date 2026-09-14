@@ -25,6 +25,7 @@ export const plannerAgent = async (state: AgentState): Promise<AgentStateUpdate>
 
     return {
       generatedOutput,
+      draftOutput: generatedOutput,
       plannerOutput: generatedOutput,
       messages: [new AIMessage(generatedOutput)]
     };
@@ -35,6 +36,7 @@ export const plannerAgent = async (state: AgentState): Promise<AgentStateUpdate>
     return {
       error: message,
       generatedOutput,
+      draftOutput: generatedOutput,
       plannerOutput: generatedOutput,
       messages: [new AIMessage(`Planner fallback used after error: ${message}`)]
     };

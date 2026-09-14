@@ -14,6 +14,20 @@ export type GuardrailDecision = {
   reason: string;
 };
 
+export type ApprovalResume = {
+  approved: boolean;
+  feedback?: string | undefined;
+};
+
+export type ApprovalInterruptPayload = {
+  question: string;
+  draftOutput: string;
+  approvalRequest: string;
+  selectedAgent?: AgentName | undefined;
+  supervisorReasoning: string;
+  expectedResponse: ApprovalResume;
+};
+
 export type AgentGraphState = {
   messages: BaseMessage[];
   userQuery: string;
@@ -25,6 +39,12 @@ export type AgentGraphState = {
   plannerOutput: string;
   researcherOutput: string;
   weatherOutput: string;
+  draftOutput: string;
+  approvalRequest: string;
+  requiresApproval: boolean;
+  approved?: boolean;
+  humanFeedback: string;
+  finalOutput: string;
   error?: string;
 };
 

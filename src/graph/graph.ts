@@ -1,5 +1,7 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
 
+import { approvalAgent } from "../agents/approval.agent.js";
+import { finalAgent } from "../agents/final.agent.js";
 import { plannerAgent } from "../agents/planner.agent.js";
 import { researcherAgent } from "../agents/researcher.agent.js";
 import { supervisorAgent } from "../agents/supervisor.agent.js";
@@ -18,6 +20,8 @@ export const buildGraph = async () => {
     .addNode("planner", plannerAgent)
     .addNode("researcher", researcherAgent)
     .addNode("weather", weatherAgent)
+    .addNode("approval", approvalAgent)
+    .addNode("final", finalAgent)
     .addEdge(START, "guardrail")
     .addConditionalEdges("guardrail", routeFromGuardrail, {
       supervisor: "supervisor",
@@ -29,9 +33,11 @@ export const buildGraph = async () => {
       weather: "weather"
     })
     .addEdge("blocked", END)
-    .addEdge("planner", END)
-    .addEdge("researcher", END)
-    .addEdge("weather", END)
+    .addEdge("planner", "approval")
+    .addEdge("researcher", "approval")
+    .addEdge("weather", "approval")
+    .addEdge("approval", "final")
+    .addEdge("final", END)
     .compile({
       checkpointer
     });

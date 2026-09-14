@@ -44,6 +44,30 @@ export const AgentStateAnnotation = Annotation.Root({
     reducer: (_current, update) => update,
     default: () => ""
   }),
+  draftOutput: Annotation<string>({
+    reducer: (_current, update) => update,
+    default: () => ""
+  }),
+  approvalRequest: Annotation<string>({
+    reducer: (_current, update) => update,
+    default: () => ""
+  }),
+  requiresApproval: Annotation<boolean>({
+    reducer: (_current, update) => update,
+    default: () => false
+  }),
+  approved: Annotation<boolean | undefined>({
+    reducer: (_current, update) => update,
+    default: () => undefined
+  }),
+  humanFeedback: Annotation<string>({
+    reducer: (_current, update) => update,
+    default: () => ""
+  }),
+  finalOutput: Annotation<string>({
+    reducer: (_current, update) => update,
+    default: () => ""
+  }),
   error: Annotation<string | undefined>({
     reducer: (_current, update) => update,
     default: () => undefined
