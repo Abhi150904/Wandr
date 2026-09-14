@@ -1,6 +1,6 @@
 import { HumanMessage } from "@langchain/core/messages";
 
-import { agentGraph } from "./graph/graph.js";
+import { buildGraph } from "./graph/graph.js";
 
 const DEFAULT_QUERY = "Create a concise plan for building a TypeScript LangGraph.js agent scaffold.";
 const DEFAULT_THREAD_ID = "default-cli-thread";
@@ -47,6 +47,7 @@ const parseCliArgs = (args: string[]): CliArgs => {
 };
 
 const { userQuery, threadId } = parseCliArgs(process.argv.slice(2));
+const { graph: agentGraph, checkpointerKind } = await buildGraph();
 const graphConfig = {
   configurable: {
     thread_id: threadId
@@ -75,6 +76,7 @@ if (result.error && !result.generatedOutput) {
     console.log("");
   }
 
+  console.log(`Checkpointer: ${checkpointerKind}`);
   console.log(`Thread ID: ${threadId}`);
   console.log(`Guardrail: ${result.guardrailAllowed ? "allowed" : "blocked"}`);
   console.log(`Guardrail reason: ${result.guardrailReason}`);
