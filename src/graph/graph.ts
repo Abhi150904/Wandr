@@ -1,4 +1,4 @@
-import { END, START, StateGraph } from "@langchain/langgraph";
+import { END, MemorySaver, START, StateGraph } from "@langchain/langgraph";
 
 import { plannerAgent } from "../agents/planner.agent.js";
 import { researcherAgent } from "../agents/researcher.agent.js";
@@ -7,6 +7,8 @@ import { weatherAgent } from "../agents/weather.agent.js";
 import { blockedResponseAgent, inputGuardrail } from "../guardrails/input.guardrail.js";
 import { routeFromGuardrail, routeFromSupervisor } from "./routes.js";
 import { AgentStateAnnotation } from "./state.js";
+
+export const graphCheckpointer = new MemorySaver();
 
 export const buildGraph = () =>
   new StateGraph(AgentStateAnnotation)
@@ -30,6 +32,8 @@ export const buildGraph = () =>
     .addEdge("planner", END)
     .addEdge("researcher", END)
     .addEdge("weather", END)
-    .compile();
+    .compile({
+      checkpointer: graphCheckpointer
+    });
 
 export const agentGraph = buildGraph();
