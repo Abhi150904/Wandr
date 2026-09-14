@@ -56,6 +56,7 @@ export const weatherAgent = async (state: AgentState): Promise<AgentStateUpdate>
 
       return {
         generatedOutput,
+        draftOutput: generatedOutput,
         weatherOutput: generatedOutput,
         messages: [new AIMessage(generatedOutput)]
       };
@@ -65,6 +66,7 @@ export const weatherAgent = async (state: AgentState): Promise<AgentStateUpdate>
       return {
         error: message,
         generatedOutput: mcpWeatherOutput,
+        draftOutput: mcpWeatherOutput,
         weatherOutput: mcpWeatherOutput,
         messages: [new AIMessage(`Weather MCP output used after Gemini error: ${message}`)]
       };
@@ -76,6 +78,7 @@ export const weatherAgent = async (state: AgentState): Promise<AgentStateUpdate>
     return {
       error: message,
       generatedOutput,
+      draftOutput: generatedOutput,
       weatherOutput: generatedOutput,
       messages: [new AIMessage(`Weather fallback used after error: ${message}`)]
     };

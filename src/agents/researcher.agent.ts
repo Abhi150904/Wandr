@@ -22,6 +22,7 @@ export const researcherAgent = async (state: AgentState): Promise<AgentStateUpda
 
     return {
       generatedOutput,
+      draftOutput: generatedOutput,
       researcherOutput: generatedOutput,
       messages: [new AIMessage(generatedOutput)]
     };
@@ -32,6 +33,7 @@ export const researcherAgent = async (state: AgentState): Promise<AgentStateUpda
     return {
       error: message,
       generatedOutput,
+      draftOutput: generatedOutput,
       researcherOutput: generatedOutput,
       messages: [new AIMessage(`Researcher fallback used after error: ${message}`)]
     };
