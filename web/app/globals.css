@@ -651,6 +651,50 @@ textarea {
   gap: 14px;
 }
 
+.loading-panel {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 18px;
+  padding: 28px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.loading-panel > svg {
+  color: var(--blue);
+}
+
+.loading-panel h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.loading-panel p {
+  max-width: 360px;
+  margin: 8px auto 0;
+  line-height: 1.5;
+}
+
+.loading-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.loading-steps span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--muted);
+  background: var(--field);
+  font-size: 12px;
+  animation: pulse-step 1100ms ease-in-out infinite;
+}
+
 .approval-copy {
   border-left: 2px solid rgba(233, 201, 120, 0.7);
   padding-left: 14px;
@@ -674,14 +718,92 @@ textarea {
   font-size: 12px;
 }
 
-.approval-flow pre,
-.final-output pre {
+.answer-view {
   border: 1px solid var(--line-soft);
   border-radius: 7px;
   background: var(--field);
   color: var(--ink);
   padding: 18px;
-  line-height: 1.58;
+  line-height: 1.62;
+}
+
+.answer-view h3 {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.answer-view h3:not(:first-child) {
+  margin-top: 18px;
+}
+
+.answer-view p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.answer-view p + p {
+  margin-top: 12px;
+}
+
+.answer-view ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: answer-list;
+}
+
+.answer-view p + ol,
+.answer-view h3 + ol {
+  margin-top: 12px;
+}
+
+.answer-view ol + p,
+.answer-view ol + h3 {
+  margin-top: 18px;
+}
+
+.answer-view li {
+  counter-increment: answer-list;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.answer-view li::before {
+  content: counter(answer-list);
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.answer-placeholder {
+  margin: 0;
+  color: var(--muted);
+}
+
+.answer-note {
+  border: 1px solid rgba(233, 201, 120, 0.38);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 9%, transparent);
   font-size: 13px;
 }
 
@@ -854,6 +976,17 @@ textarea {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-step {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
   }
 }
 

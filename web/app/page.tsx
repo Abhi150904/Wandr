@@ -7,6 +7,7 @@ import {
   CloudSun,
   ClipboardCheck,
   Compass,
+  FileText,
   MapPinned,
   MessageSquareText,
   Moon,
@@ -100,6 +101,25 @@ const modeOptions = [
 type ModeId = (typeof modeOptions)[number]["id"];
 type Theme = "dark" | "light";
 
+type FormattedBlock =
+  | {
+      id: string;
+      kind: "heading";
+      text: string;
+    }
+  | {
+      id: string;
+      kind: "paragraph";
+      text: string;
+    }
+  | {
+      id: string;
+      kind: "list";
+      items: string[];
+    };
+
+const loadingSteps = ["Checking request", "Choosing specialist", "Drafting answer", "Preparing review"];
+
 const createThreadId = () => `web-${Date.now().toString(36)}`;
 
 const isApiRunResponse = (payload: unknown): payload is ApiRunResponse => {
@@ -113,6 +133,105 @@ const getApiErrorMessage = (payload: unknown, fallback: string) => {
   return candidate.error?.message ?? fallback;
 };
 
+const isListLine = (line: string) => /^(\d+\.|-|\*)\s+/.test(line.trim());
+
+const cleanListLine = (line: string) => line.trim().replace(/^(\d+\.|-|\*)\s+/, "");
+
+const formatAnswer = (text: string): FormattedBlock[] => {
+  const lines = text
+    .replace(/^Final response\s*/i, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const blocks: FormattedBlock[] = [];
+  let listItems: string[] = [];
+
+  const flushList = () => {
+    if (listItems.length === 0) return;
+    blocks.push({
+      id: `list-${blocks.length}`,
+      kind: "list",
+      items: listItems
+    });
+    listItems = [];
+  };
+
+  lines.forEach((line) => {
+    if (isListLine(line)) {
+      listItems.push(cleanListLine(line));
+      return;
+    }
+
+    flushList();
+
+    if (line.endsWith(":") && line.length < 80) {
+      blocks.push({
+        id: `heading-${blocks.length}`,
+        kind: "heading",
+        text: line.replace(/:$/, "")
+      });
+      return;
+    }
+
+    blocks.push({
+      id: `paragraph-${blocks.length}`,
+      kind: "paragraph",
+      text: line
+    });
+  });
+
+  flushList();
+
+  return blocks;
+};
+
+const AnswerView = ({ text }: { text: string }) => {
+  const blocks = formatAnswer(text);
+
+  if (blocks.length === 0) {
+    return <p className="answer-placeholder">No answer content yet.</p>;
+  }
+
+  return (
+    <article className="answer-view">
+      {blocks.map((block) => {
+        if (block.kind === "heading") {
+          return <h3 key={block.id}>{block.text}</h3>;
+        }
+
+        if (block.kind === "list") {
+          return (
+            <ol key={block.id}>
+              {block.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ol>
+          );
+        }
+
+        return <p key={block.id}>{block.text}</p>;
+      })}
+    </article>
+  );
+};
+
+const LoadingPanel = () => (
+  <div className="loading-panel" aria-live="polite">
+    <CircleDashed className="spin" size={22} />
+    <div>
+      <h3>Researching your request</h3>
+      <p>Wandr is preparing a draft you can review before it becomes final.</p>
+    </div>
+    <div className="loading-steps">
+      {loadingSteps.map((step, index) => (
+        <span key={step} style={{ animationDelay: `${index * 140}ms` }}>
+          {step}
+        </span>
+      ))}
+    </div>
+  </div>
+);
+
 export default function Home() {
   const [message, setMessage] = useState(starterPrompts[0]);
   const [activeMode, setActiveMode] = useState<ModeId>("research");
@@ -125,9 +244,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const status = useMemo(() => {
+    if (isLoading) return "Researching";
     if (!run) return "Idle";
     return run.status === "requires_approval" ? "Awaiting review" : "Completed";
-  }, [run]);
+  }, [isLoading, run]);
 
   const selectedAgent =
     run?.status === "requires_approval" ? run.approval.selectedAgent : run?.result.selectedAgent;
@@ -155,7 +275,13 @@ export default function Home() {
       : run?.status === "requires_approval"
         ? run.approval.draftOutput
         : "";
-  const planStage = !run ? "Ready to plan" : run.status === "requires_approval" ? "Ready for review" : "Plan finalized";
+  const planStage = isLoading
+    ? "Researching"
+    : !run
+      ? "Ready to research"
+      : run.status === "requires_approval"
+        ? "Ready for review"
+        : "Answer finalized";
   const requestCheck = guardrail === "Allowed" ? "Looks good" : guardrail === "Blocked" ? "Needs changes" : "Pending";
   const selectedMode = modeOptions.find((mode) => mode.id === activeMode) ?? modeOptions[0];
   const isLightTheme = theme === "light";
@@ -360,19 +486,23 @@ export default function Home() {
               </div>
 
               {!run ? (
+                isLoading ? (
+                  <LoadingPanel />
+                ) : (
                 <div className="empty-state">
                   <div className="empty-glyph">
                     <ClipboardCheck size={20} />
                   </div>
                   <p>Your researched answer will appear here first, so you can approve it or ask for changes.</p>
                 </div>
+                )
               ) : run.status === "requires_approval" ? (
                 <div className="approval-flow">
                   <div className="approval-copy">
                     <p>Review the draft below. Approve it, or reject it with notes for revision.</p>
                     <span>{run.approval.question}</span>
                   </div>
-                  <pre>{run.approval.draftOutput}</pre>
+                  <AnswerView text={run.approval.draftOutput} />
                   <textarea
                     className="feedback-box"
                     value={feedback}
@@ -392,7 +522,13 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="final-output">
-                  <pre>{run.result.generatedOutput}</pre>
+                  {run.result.error ? (
+                    <div className="answer-note">
+                      <FileText size={15} />
+                      <span>Wandr used its deterministic fallback because the model provider returned an error.</span>
+                    </div>
+                  ) : null}
+                  <AnswerView text={run.result.generatedOutput} />
                 </div>
               )}
             </section>
@@ -424,13 +560,13 @@ export default function Home() {
             </dl>
 
             <div className="progress-card">
-              <div className={run ? "complete" : "active"}>
+              <div className={run || isLoading ? "complete" : "active"}>
                 <span />
                 <p>Describe the trip</p>
               </div>
-              <div className={run?.status === "requires_approval" ? "active" : run ? "complete" : ""}>
+              <div className={isLoading ? "active" : run?.status === "requires_approval" ? "active" : run ? "complete" : ""}>
                 <span />
-                <p>Review the draft</p>
+                <p>{isLoading ? "Draft the answer" : "Review the draft"}</p>
               </div>
               <div className={run?.status === "completed" ? "complete active" : ""}>
                 <span />
