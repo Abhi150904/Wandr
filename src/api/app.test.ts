@@ -34,6 +34,41 @@ describe("api app", () => {
     expect(response.body.features).toContain("hitl_resume");
   });
 
+  it("returns readiness details without exposing secret values", async () => {
+    const response = await request(createApp()).get("/ready");
+
+    expect([200, 503]).toContain(response.status);
+    expect(response.body.dependencies).toEqual(
+      expect.objectContaining({
+        database: expect.any(String),
+        clerk: expect.any(String),
+        gemini: expect.any(String),
+        openWeather: expect.any(String),
+        webOrigin: expect.any(String)
+      })
+    );
+    expect(JSON.stringify(response.body)).not.toContain("sk_");
+    expect(JSON.stringify(response.body)).not.toContain("pk_");
+  });
+
+  it("allows the local web origin for browser API calls", async () => {
+    const response = await request(createApp())
+      .get("/health")
+      .set("Origin", "http://localhost:3001");
+
+    expect(response.status).toBe(200);
+    expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:3001");
+  });
+
+  it("rejects unconfigured browser origins", async () => {
+    const response = await request(createApp())
+      .get("/health")
+      .set("Origin", "https://example.invalid");
+
+    expect(response.status).toBe(500);
+    expect(response.body.error.message).toContain("CORS origin not allowed");
+  });
+
   it("validates start run body", async () => {
     const response = await request(createApp()).post("/api/runs").send({ message: "" });
 
