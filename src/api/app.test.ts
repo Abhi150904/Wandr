@@ -3,14 +3,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "./app.js";
 import { resumeRun, startRun } from "../graph/runner.js";
+import { getRunHistory, saveRunHistory } from "./run-history.js";
 
 vi.mock("../graph/runner.js", () => ({
   startRun: vi.fn(),
   resumeRun: vi.fn()
 }));
 
+vi.mock("./run-history.js", () => ({
+  getRunHistory: vi.fn(),
+  listRunHistory: vi.fn().mockResolvedValue([]),
+  saveRunHistory: vi.fn()
+}));
+
 const mockedStartRun = vi.mocked(startRun);
 const mockedResumeRun = vi.mocked(resumeRun);
+const mockedGetRunHistory = vi.mocked(getRunHistory);
+const mockedSaveRunHistory = vi.mocked(saveRunHistory);
 
 describe("api app", () => {
   beforeEach(() => {
@@ -57,9 +66,29 @@ describe("api app", () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("requires_approval");
     expect(mockedStartRun).toHaveBeenCalledWith("Plan a trip", "api-test");
+    expect(mockedSaveRunHistory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Plan a trip",
+        mode: "research",
+        threadId: "api-test",
+        userId: "local-dev-user"
+      })
+    );
   });
 
   it("resumes a run", async () => {
+    mockedGetRunHistory.mockResolvedValue({
+      threadId: "api-test",
+      userId: "local-dev-user",
+      message: "Plan a trip",
+      mode: "plan",
+      status: "requires_approval",
+      draftOutput: "Draft",
+      generatedOutput: "Draft",
+      finalOutput: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
     mockedResumeRun.mockResolvedValue({
       success: true,
       status: "completed",
@@ -82,5 +111,14 @@ describe("api app", () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("completed");
     expect(mockedResumeRun).toHaveBeenCalledWith("api-test", { approved: true });
+    expect(mockedSaveRunHistory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Plan a trip",
+        mode: "plan",
+        status: "completed",
+        threadId: "api-test",
+        userId: "local-dev-user"
+      })
+    );
   });
 });

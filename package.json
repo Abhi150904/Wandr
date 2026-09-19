@@ -18,6 +18,7 @@
     "web:typecheck": "npm --prefix web run typecheck"
   },
   "dependencies": {
+    "@clerk/express": "^2.1.69",
     "@langchain/core": "^1.0.0",
     "@langchain/google-genai": "^2.3.2",
     "@langchain/langgraph": "^1.0.2",
