@@ -5,7 +5,9 @@ import { z } from "zod";
 
 import { resumeRun, startRun } from "../graph/runner.js";
 import { attachAuth, requireUser, type AuthedResponseLocals } from "./auth.js";
+import { corsOptions } from "./cors.js";
 import { unknownError, validationError } from "./errors.js";
+import { getReadiness } from "./readiness.js";
 import {
   getRunHistory,
   listRunHistory,
@@ -17,7 +19,7 @@ import { resumeRunRequestSchema, startRunRequestSchema } from "./schemas.js";
 export const createApp = () => {
   const app = express();
 
-  app.use(cors());
+  app.use(cors(corsOptions));
   app.use(express.json());
   app.use(attachAuth);
 
@@ -33,6 +35,11 @@ export const createApp = () => {
         "hitl_resume"
       ]
     });
+  });
+
+  app.get("/ready", (_request, response) => {
+    const readiness = getReadiness();
+    response.status(readiness.status === "ready" ? 200 : 503).json(readiness);
   });
 
   app.get(
