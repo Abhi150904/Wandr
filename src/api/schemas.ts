@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const startRunRequestSchema = z.object({
   message: z.string().trim().min(1, "message is required"),
+  mode: z.enum(["plan", "weather", "research"]).default("research"),
   threadId: z.string().trim().min(1).optional()
 });
 

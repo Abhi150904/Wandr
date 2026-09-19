@@ -248,6 +248,77 @@ pre {
   line-height: 1.45;
 }
 
+.history-panel {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+}
+
+.history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.history-heading strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.history-heading span {
+  color: var(--faint);
+  font-size: 11px;
+}
+
+.history-list {
+  display: grid;
+  gap: 7px;
+}
+
+.history-list p {
+  margin: 0;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.history-list button {
+  min-height: 56px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 10px 11px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 78%, transparent);
+  text-align: left;
+}
+
+.history-list button:hover,
+.history-list button.active {
+  border-color: rgba(139, 183, 255, 0.42);
+  color: var(--ink);
+}
+
+.history-list button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.history-list button small {
+  color: var(--faint);
+  font-size: 11px;
+}
+
 .app-shell[data-sidebar="collapsed"] .brand-panel {
   padding: 18px 14px;
   align-items: center;
@@ -263,6 +334,7 @@ pre {
 
 .app-shell[data-sidebar="collapsed"] .brand-lockup > div:not(.brand-mark),
 .app-shell[data-sidebar="collapsed"] .mode-list button span,
+.app-shell[data-sidebar="collapsed"] .history-panel,
 .app-shell[data-sidebar="collapsed"] .sidebar-note p {
   display: none;
 }
@@ -380,6 +452,27 @@ pre {
 
 .theme-toggle:hover {
   color: var(--ink);
+}
+
+.auth-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-chip {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  font-size: 13px;
+}
+
+.compact {
+  min-height: 31px;
+  padding: 0 10px;
+  font-size: 13px;
 }
 
 .content-grid {
@@ -1016,6 +1109,7 @@ textarea {
 
   .app-shell[data-sidebar="collapsed"] .brand-lockup > div:not(.brand-mark),
   .app-shell[data-sidebar="collapsed"] .mode-list button span,
+  .app-shell[data-sidebar="collapsed"] .history-panel,
   .app-shell[data-sidebar="collapsed"] .sidebar-note p {
     display: block;
   }

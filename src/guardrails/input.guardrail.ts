@@ -44,6 +44,19 @@ const fallbackGuardrailDecision = (userQuery: string): GuardrailDecision => {
   }
 
   const allowedTerms = [
+    "best time",
+    "destination",
+    "destinations",
+    "season",
+    "seasons",
+    "visit",
+    "visa",
+    "hotel",
+    "hotels",
+    "flight",
+    "flights",
+    "route",
+    "places",
     "plan",
     "trip",
     "travel",
@@ -81,9 +94,10 @@ export const inputGuardrail = async (state: AgentState): Promise<AgentStateUpdat
     const response = await invokeGeminiText(
       [
         "You are the input guardrail for a small agent workflow.",
-        "Allow requests about planning, research, weather guidance, travel, or building AI agent software.",
+        "Allow requests about planning, research, weather guidance, destinations, trips, itineraries, seasons, visiting places, or building AI agent software.",
         "Block clearly unrelated requests and unsafe or illegal instructions.",
-        "Do not block valid requests only because they are missing details.",
+        "Do not block valid travel or research requests only because they are missing details.",
+        "Examples that must be allowed: best time to visit Japan, compare Jaipur and Udaipur, what weather should I prepare for in London.",
         "Return strict JSON only with this schema:",
         '{"allowed":true,"reason":"short reason"}'
       ].join("\n"),
@@ -104,8 +118,7 @@ export const inputGuardrail = async (state: AgentState): Promise<AgentStateUpdat
 
 export const blockedResponseAgent = (state: AgentState): AgentStateUpdate => {
   const generatedOutput =
-    state.guardrailReason ||
-    "This request is outside the current scope of the agent workflow.";
+    `I cannot help with this request yet. ${state.guardrailReason || "It is outside the current scope of Wandr AI."}`;
 
   return {
     generatedOutput,
