@@ -27,6 +27,7 @@ const createState = (userQuery: string): AgentState =>
     requiresApproval: false,
     humanFeedback: "",
     finalOutput: "",
+    sources: [],
     approved: undefined,
     error: undefined
   }) as AgentState;

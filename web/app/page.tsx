@@ -31,6 +31,13 @@ type ApprovalPayload = {
   approvalRequest: string;
   selectedAgent?: AgentName;
   supervisorReasoning: string;
+  sources: ResearchSource[];
+};
+
+type ResearchSource = {
+  title: string;
+  url: string;
+  snippet: string;
 };
 
 type RunResult = {
@@ -41,6 +48,7 @@ type RunResult = {
   approved?: boolean;
   generatedOutput: string;
   finalOutput: string;
+  sources: ResearchSource[];
   error?: string;
 };
 
@@ -76,6 +84,7 @@ type RunHistoryEntry = {
   draftOutput: string;
   generatedOutput: string;
   finalOutput: string;
+  sources: ResearchSource[];
   approval?: ApprovalPayload;
   createdAt: string;
   updatedAt: string;
@@ -151,6 +160,18 @@ type FormattedBlock =
       items: string[];
     };
 
+type InlineSegment =
+  | {
+      id: string;
+      kind: "strong";
+      text: string;
+    }
+  | {
+      id: string;
+      kind: "text";
+      text: string;
+    };
+
 const loadingSteps = ["Checking request", "Choosing specialist", "Drafting answer", "Preparing review"];
 
 const createThreadId = () => `web-${Date.now().toString(36)}`;
@@ -182,6 +203,63 @@ const isListLine = (line: string) => /^(\d+\.|-|\*)\s+/.test(line.trim());
 
 const cleanListLine = (line: string) => line.trim().replace(/^(\d+\.|-|\*)\s+/, "");
 
+const isHeadingLine = (line: string) =>
+  /^#{1,6}\s+/.test(line) || (line.endsWith(":") && line.length < 80);
+
+const cleanHeading = (line: string) =>
+  line
+    .replace(/^#{1,6}\s+/, "")
+    .replace(/^\d+\.\s+/, "")
+    .trim();
+
+const stripMarkdown = (text: string) => text.replace(/\*\*/g, "");
+
+const formatInline = (text: string): InlineSegment[] => {
+  const segments: InlineSegment[] = [];
+  const pattern = /\*\*(.+?)\*\*/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({
+        id: `text-${segments.length}`,
+        kind: "text",
+        text: text.slice(lastIndex, match.index)
+      });
+    }
+
+    segments.push({
+      id: `strong-${segments.length}`,
+      kind: "strong",
+      text: match[1] ?? ""
+    });
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    segments.push({
+      id: `text-${segments.length}`,
+      kind: "text",
+      text: text.slice(lastIndex)
+    });
+  }
+
+  return segments.length > 0 ? segments : [{ id: "text-0", kind: "text", text }];
+};
+
+const InlineText = ({ text }: { text: string }) => (
+  <>
+    {formatInline(text).map((segment) =>
+      segment.kind === "strong" ? (
+        <strong key={segment.id}>{segment.text}</strong>
+      ) : (
+        <span key={segment.id}>{segment.text}</span>
+      )
+    )}
+  </>
+);
+
 const formatAnswer = (text: string): FormattedBlock[] => {
   const lines = text
     .replace(/^Final response\s*/i, "")
@@ -207,13 +285,27 @@ const formatAnswer = (text: string): FormattedBlock[] => {
       return;
     }
 
+    if (listItems.length > 0 && !isHeadingLine(line)) {
+      listItems[listItems.length - 1] = `${listItems[listItems.length - 1]} ${line}`;
+      return;
+    }
+
     flushList();
+
+    if (/^#{1,6}\s+/.test(line)) {
+      blocks.push({
+        id: `heading-${blocks.length}`,
+        kind: "heading",
+        text: cleanHeading(line)
+      });
+      return;
+    }
 
     if (line.endsWith(":") && line.length < 80) {
       blocks.push({
         id: `heading-${blocks.length}`,
         kind: "heading",
-        text: line.replace(/:$/, "")
+        text: stripMarkdown(line.replace(/:$/, ""))
       });
       return;
     }
@@ -230,7 +322,25 @@ const formatAnswer = (text: string): FormattedBlock[] => {
   return blocks;
 };
 
-const AnswerView = ({ text }: { text: string }) => {
+const SourcesView = ({ sources }: { sources: ResearchSource[] }) => {
+  if (sources.length === 0) return null;
+
+  return (
+    <section className="sources-view">
+      <h3>Sources</h3>
+      <div>
+        {sources.map((source) => (
+          <a href={source.url} key={source.url} rel="noreferrer" target="_blank">
+            <strong>{source.title}</strong>
+            <span>{source.snippet}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+const AnswerView = ({ sources = [], text }: { sources?: ResearchSource[]; text: string }) => {
   const blocks = formatAnswer(text);
 
   if (blocks.length === 0) {
@@ -248,14 +358,23 @@ const AnswerView = ({ text }: { text: string }) => {
           return (
             <ol key={block.id}>
               {block.items.map((item) => (
-                <li key={item}>{item}</li>
+                <li key={item}>
+                  <span className="answer-item-text">
+                    <InlineText text={item} />
+                  </span>
+                </li>
               ))}
             </ol>
           );
         }
 
-        return <p key={block.id}>{block.text}</p>;
+        return (
+          <p key={block.id}>
+            <InlineText text={block.text} />
+          </p>
+        );
       })}
+      <SourcesView sources={sources} />
     </article>
   );
 };
@@ -300,7 +419,8 @@ const historyToRun = (entry: RunHistoryEntry): ApiRunResponse => {
       supervisorReasoning: "Loaded from saved history.",
       approved: entry.status === "completed" ? true : undefined,
       generatedOutput: entry.generatedOutput || entry.draftOutput,
-      finalOutput: entry.finalOutput || entry.generatedOutput || entry.draftOutput
+      finalOutput: entry.finalOutput || entry.generatedOutput || entry.draftOutput,
+      sources: entry.sources
     }
   };
 };
@@ -738,7 +858,7 @@ function Workspace({ auth }: { auth: AuthState }) {
                     <p>Review the draft below. Approve it, or reject it with notes for revision.</p>
                     <span>{run.approval.question}</span>
                   </div>
-                  <AnswerView text={run.approval.draftOutput} />
+                  <AnswerView sources={run.approval.sources} text={run.approval.draftOutput} />
                   <textarea
                     className="feedback-box"
                     value={feedback}
@@ -764,7 +884,7 @@ function Workspace({ auth }: { auth: AuthState }) {
                       <span>Wandr used its deterministic fallback because the model provider returned an error.</span>
                     </div>
                   ) : null}
-                  <AnswerView text={run.result.generatedOutput} />
+                  <AnswerView sources={run.result.sources} text={run.result.generatedOutput} />
                 </div>
               )}
             </section>

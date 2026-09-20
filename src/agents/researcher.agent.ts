@@ -2,13 +2,40 @@ import { AIMessage } from "@langchain/core/messages";
 
 import { invokeGeminiText } from "../config/llm.js";
 import type { AgentState, AgentStateUpdate } from "../graph/state.js";
+import type { ResearchSource } from "../graph/types.js";
+import { searchWeb } from "../tools/web-search.tool.js";
 
 const extractVisitDestination = (userQuery: string): string => {
   const match = userQuery.match(/\b(?:visit|to)\s+([a-zA-Z\s]+?)(?:\?|\.|,|$)/i);
   return match?.[1]?.trim() || "the destination";
 };
 
-const fallbackResearch = (userQuery: string): string => {
+const sourceBackedFallbackResearch = (
+  userQuery: string,
+  sources: ResearchSource[]
+): string | undefined => {
+  const realSources = sources.filter(
+    (source) => !source.url.includes("example.com/wandr-local-guidance")
+  );
+
+  if (realSources.length === 0) return undefined;
+
+  const sourceLines = realSources.slice(0, 3).map((source, index) => {
+    const snippet = source.snippet.replace(/\s+/g, " ").trim();
+    return `${index + 1}. ${source.title}: ${snippet}`;
+  });
+
+  return [
+    `Research brief for: ${userQuery}`,
+    ...sourceLines,
+    `${sourceLines.length + 1}. Recommendation: use the sources above as the starting point, then confirm dates, prices, transport times, and seasonal conditions before booking.`
+  ].join("\n");
+};
+
+const fallbackResearch = (userQuery: string, sources: ResearchSource[] = []): string => {
+  const sourceBacked = sourceBackedFallbackResearch(userQuery, sources);
+  if (sourceBacked) return sourceBacked;
+
   const query = userQuery.toLowerCase();
   const destination = extractVisitDestination(userQuery);
 
@@ -44,28 +71,40 @@ const fallbackResearch = (userQuery: string): string => {
 };
 
 export const researcherAgent = async (state: AgentState): Promise<AgentStateUpdate> => {
+  const sources = await searchWeb(state.userQuery);
+  const sourceContext = sources
+    .map((source, index) => `${index + 1}. ${source.title}\n${source.url}\n${source.snippet}`)
+    .join("\n\n");
+
   try {
     const generatedOutput =
       (await invokeGeminiText(
-        "You are a careful research agent. Provide a concise research brief. Do not claim live web access.",
-        state.userQuery
-      )) ?? fallbackResearch(state.userQuery);
+        [
+          "You are a careful travel research agent.",
+          "Use the provided web search snippets as grounding when they are relevant.",
+          "Write a concise answer with practical tradeoffs.",
+          "Do not invent source details beyond the snippets."
+        ].join("\n"),
+        [`User request:\n${state.userQuery}`, `Search sources:\n${sourceContext}`].join("\n\n")
+      )) ?? fallbackResearch(state.userQuery, sources);
 
     return {
       generatedOutput,
       draftOutput: generatedOutput,
       researcherOutput: generatedOutput,
+      sources,
       messages: [new AIMessage(generatedOutput)]
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown researcher error";
-    const generatedOutput = fallbackResearch(state.userQuery);
+    const generatedOutput = fallbackResearch(state.userQuery, sources);
 
     return {
-      error: message,
+      ...(sources.length === 0 ? { error: message } : {}),
       generatedOutput,
       draftOutput: generatedOutput,
       researcherOutput: generatedOutput,
+      sources,
       messages: [new AIMessage(`Researcher fallback used after error: ${message}`)]
     };
   }

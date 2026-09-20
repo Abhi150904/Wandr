@@ -27,6 +27,18 @@ const fallbackFinal = (state: AgentState): string => {
 
 export const finalAgent = async (state: AgentState): Promise<AgentStateUpdate> => {
   const draft = state.draftOutput || state.generatedOutput;
+
+  if (state.approved) {
+    const finalOutput = fallbackFinal(state);
+
+    return {
+      generatedOutput: finalOutput,
+      finalOutput,
+      sources: state.sources,
+      messages: [new AIMessage(finalOutput)]
+    };
+  }
+
   const reviewInstruction = state.approved
     ? "The human approved the draft. Preserve its substance while polishing the final response."
     : `The human requested revision. Apply this feedback carefully: ${state.humanFeedback || "Improve the draft before finalizing."}`;
@@ -50,6 +62,7 @@ export const finalAgent = async (state: AgentState): Promise<AgentStateUpdate> =
     return {
       generatedOutput: finalOutput,
       finalOutput,
+      sources: state.sources,
       messages: [new AIMessage(finalOutput)]
     };
   } catch (error) {
@@ -60,6 +73,7 @@ export const finalAgent = async (state: AgentState): Promise<AgentStateUpdate> =
       error: message,
       generatedOutput: finalOutput,
       finalOutput,
+      sources: state.sources,
       messages: [new AIMessage(`Final fallback used after error: ${message}`)]
     };
   }

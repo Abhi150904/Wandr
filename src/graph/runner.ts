@@ -7,7 +7,8 @@ import {
   AGENT_NAMES,
   type AgentName,
   type ApprovalInterruptPayload,
-  type ApprovalResume
+  type ApprovalResume,
+  type ResearchSource
 } from "./types.js";
 
 export type RunStatus = "requires_approval" | "completed";
@@ -26,9 +27,16 @@ export type RunResult = {
     approved?: boolean;
     generatedOutput: string;
     finalOutput: string;
+    sources: ResearchSource[];
     error?: string;
   };
 };
+
+const sourceSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  snippet: z.string()
+});
 
 const approvalInterruptPayloadSchema = z.object({
   question: z.string(),
@@ -36,6 +44,7 @@ const approvalInterruptPayloadSchema = z.object({
   approvalRequest: z.string(),
   selectedAgent: z.enum(AGENT_NAMES).optional(),
   supervisorReasoning: z.string(),
+  sources: z.array(sourceSchema).default([]),
   expectedResponse: z.object({
     approved: z.boolean(),
     feedback: z.string().optional()
@@ -62,6 +71,7 @@ const toRunResult = (
     : undefined;
   const approved = typeof result.approved === "boolean" ? result.approved : undefined;
   const error = typeof result.error === "string" ? result.error : undefined;
+  const sources = z.array(sourceSchema).catch([]).parse(result.sources);
 
   return {
     success: true,
@@ -76,6 +86,7 @@ const toRunResult = (
       ...(approved !== undefined ? { approved } : {}),
       generatedOutput: String(result.generatedOutput ?? ""),
       finalOutput: String(result.finalOutput ?? ""),
+      sources,
       ...(error ? { error } : {})
     }
   };
@@ -98,7 +109,8 @@ export const startRun = async (message: string, threadId: string): Promise<RunRe
       approvalRequest: "",
       requiresApproval: false,
       humanFeedback: "",
-      finalOutput: ""
+      finalOutput: "",
+      sources: []
     },
     {
       configurable: {

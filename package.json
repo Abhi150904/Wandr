@@ -8,6 +8,7 @@
     "api:dev": "tsx src/api/server.ts",
     "build": "tsc",
     "dev": "tsx src/index.ts",
+    "validate": "npm run typecheck && npm test && npm run build && npm run web:typecheck && npm run web:build",
     "mcp:weather": "tsx src/mcp/servers/weather.server.ts",
     "start": "node dist/api/server.js",
     "test": "vitest run",

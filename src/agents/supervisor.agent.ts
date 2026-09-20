@@ -1,31 +1,23 @@
 import { AIMessage } from "@langchain/core/messages";
-import { z } from "zod";
 
-import { invokeGeminiText } from "../config/llm.js";
 import type { AgentState, AgentStateUpdate } from "../graph/state.js";
-import { AGENT_NAMES, type AgentName, type SupervisorDecision } from "../graph/types.js";
+import type { AgentName, SupervisorDecision } from "../graph/types.js";
 
-const supervisorDecisionSchema = z.object({
-  selectedAgent: z.enum(AGENT_NAMES),
-  reason: z.string().trim().min(1)
-});
-
-const parseSupervisorDecision = (text: string): SupervisorDecision => {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-
-  if (start === -1 || end === -1 || end < start) {
-    throw new Error("Supervisor response did not contain a JSON object.");
-  }
-
-  return supervisorDecisionSchema.parse(JSON.parse(text.slice(start, end + 1)));
-};
-
-const fallbackDecision = (userQuery: string): SupervisorDecision => {
+const routeRequest = (userQuery: string): SupervisorDecision => {
   const query = userQuery.toLowerCase();
 
   const weatherTerms = ["weather", "forecast", "rain", "temperature", "climate", "pack"];
-  const researchTerms = ["research", "compare", "find", "explain", "summarize", "information"];
+  const researchTerms = [
+    "best time",
+    "compare",
+    "find",
+    "research",
+    "explain",
+    "summarize",
+    "information",
+    "should i",
+    "which is better"
+  ];
 
   if (weatherTerms.some((term) => query.includes(term))) {
     return {
@@ -48,24 +40,7 @@ const fallbackDecision = (userQuery: string): SupervisorDecision => {
 };
 
 export const supervisorAgent = async (state: AgentState): Promise<AgentStateUpdate> => {
-  let decision: SupervisorDecision;
-
-  try {
-    const response = await invokeGeminiText(
-      [
-        "You are a supervisor for a small LangGraph agent system.",
-        "Choose exactly one next agent: planner, researcher, or weather.",
-        "Return strict JSON only with this schema:",
-        '{"selectedAgent":"planner | researcher | weather","reason":"short reason"}'
-      ].join("\n"),
-      state.userQuery
-    );
-
-    decision = response ? parseSupervisorDecision(response) : fallbackDecision(state.userQuery);
-  } catch {
-    decision = fallbackDecision(state.userQuery);
-  }
-
+  const decision = routeRequest(state.userQuery);
   const selectedAgent: AgentName = decision.selectedAgent;
   const message = `Supervisor selected ${selectedAgent}: ${decision.reason}`;
 
