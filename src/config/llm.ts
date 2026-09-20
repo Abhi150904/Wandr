@@ -2,7 +2,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 import { env } from "./env.js";
 
-const GEMINI_TIMEOUT_MS = 15_000;
+const GEMINI_TIMEOUT_MS = 30_000;
 
 const withTimeout = async <T>(
   task: (signal: AbortSignal) => Promise<T>,
@@ -42,7 +42,7 @@ export const invokeGeminiText = async (
     apiKey: geminiApiKey,
     model: env.GEMINI_MODEL,
     temperature: 0,
-    maxRetries: 0
+    maxRetries: 2
   });
 
   const response = await withTimeout(

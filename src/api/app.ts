@@ -122,6 +122,7 @@ export const createApp = () => {
         draftOutput: result.approval?.draftOutput ?? "",
         generatedOutput: result.result?.generatedOutput ?? result.approval?.draftOutput ?? "",
         finalOutput: result.result?.finalOutput ?? "",
+        sources: result.result?.sources ?? result.approval?.sources ?? [],
         ...(result.approval ? { approval: result.approval } : {})
       });
 
@@ -180,6 +181,7 @@ export const createApp = () => {
           draftOutput: existingRun.draftOutput,
           generatedOutput: result.result?.generatedOutput ?? existingRun.generatedOutput,
           finalOutput: result.result?.finalOutput ?? existingRun.finalOutput,
+          sources: result.result?.sources ?? result.approval?.sources ?? existingRun.sources,
           ...(result.approval ? { approval: result.approval } : {})
         });
 

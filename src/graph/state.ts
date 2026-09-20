@@ -1,7 +1,7 @@
 import type { BaseMessage } from "@langchain/core/messages";
 import { Annotation, messagesStateReducer } from "@langchain/langgraph";
 
-import type { AgentName } from "./types.js";
+import type { AgentName, ResearchSource } from "./types.js";
 
 export const AgentStateAnnotation = Annotation.Root({
   messages: Annotation<BaseMessage[]>({
@@ -67,6 +67,10 @@ export const AgentStateAnnotation = Annotation.Root({
   finalOutput: Annotation<string>({
     reducer: (_current, update) => update,
     default: () => ""
+  }),
+  sources: Annotation<ResearchSource[]>({
+    reducer: (_current, update) => update,
+    default: () => []
   }),
   error: Annotation<string | undefined>({
     reducer: (_current, update) => update,

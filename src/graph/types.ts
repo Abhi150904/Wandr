@@ -19,12 +19,19 @@ export type ApprovalResume = {
   feedback?: string | undefined;
 };
 
+export type ResearchSource = {
+  title: string;
+  url: string;
+  snippet: string;
+};
+
 export type ApprovalInterruptPayload = {
   question: string;
   draftOutput: string;
   approvalRequest: string;
   selectedAgent?: AgentName | undefined;
   supervisorReasoning: string;
+  sources: ResearchSource[];
   expectedResponse: ApprovalResume;
 };
 
@@ -45,6 +52,7 @@ export type AgentGraphState = {
   approved?: boolean;
   humanFeedback: string;
   finalOutput: string;
+  sources: ResearchSource[];
   error?: string;
 };
 

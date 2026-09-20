@@ -3,6 +3,7 @@ import {
   hasDatabaseUrl,
   hasGeminiApiKey,
   hasOpenWeatherApiKey,
+  hasTavilyApiKey,
   hasWebOrigin
 } from "../config/env.js";
 
@@ -14,6 +15,7 @@ export type ReadinessBody = {
     database: DependencyStatus;
     clerk: DependencyStatus;
     gemini: DependencyStatus;
+    tavily: DependencyStatus;
     openWeather: DependencyStatus;
     webOrigin: DependencyStatus;
   };
@@ -28,6 +30,7 @@ export const getReadiness = (): ReadinessBody => {
     database: status(hasDatabaseUrl),
     clerk: status(hasClerkAuthKeys),
     gemini: status(hasGeminiApiKey),
+    tavily: status(hasTavilyApiKey),
     openWeather: status(hasOpenWeatherApiKey),
     webOrigin: status(hasWebOrigin)
   };
@@ -36,6 +39,7 @@ export const getReadiness = (): ReadinessBody => {
     dependencies.database === "missing" ? "DATABASE_URL" : undefined,
     dependencies.clerk === "missing" ? "CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY" : undefined,
     dependencies.gemini === "missing" ? "GEMINI_API_KEY" : undefined,
+    dependencies.tavily === "missing" ? "TAVILY_API_KEY" : undefined,
     dependencies.webOrigin === "missing" ? "WEB_ORIGIN" : undefined
   ].filter((value): value is string => Boolean(value));
 

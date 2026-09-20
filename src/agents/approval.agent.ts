@@ -21,6 +21,7 @@ export const approvalAgent = (state: AgentState): AgentStateUpdate => {
     approvalRequest,
     ...(state.selectedAgent ? { selectedAgent: state.selectedAgent } : {}),
     supervisorReasoning: state.supervisorReasoning,
+    sources: state.sources,
     expectedResponse: {
       approved: true,
       feedback: "Optional revision feedback"
@@ -35,6 +36,7 @@ export const approvalAgent = (state: AgentState): AgentStateUpdate => {
     requiresApproval: false,
     approved: parsedReview.approved,
     humanFeedback: parsedReview.feedback?.trim() ?? "",
+    sources: state.sources,
     messages: [new AIMessage("Human approval step completed.")]
   };
 };

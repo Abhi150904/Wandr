@@ -1,7 +1,7 @@
 import { Pool, type QueryResult } from "pg";
 
 import { env } from "../config/env.js";
-import type { AgentName, ApprovalInterruptPayload } from "../graph/types.js";
+import type { AgentName, ApprovalInterruptPayload, ResearchSource } from "../graph/types.js";
 
 export type RunHistoryStatus = "requires_approval" | "completed";
 export type RunHistoryMode = "plan" | "weather" | "research";
@@ -16,6 +16,7 @@ export type RunHistoryEntry = {
   draftOutput: string;
   generatedOutput: string;
   finalOutput: string;
+  sources: ResearchSource[];
   approval?: ApprovalInterruptPayload;
   createdAt: string;
   updatedAt: string;
@@ -33,6 +34,7 @@ type DbRunHistoryRow = {
   draft_output: string;
   generated_output: string;
   final_output: string;
+  sources: ResearchSource[] | null;
   approval_payload: ApprovalInterruptPayload | null;
   created_at: Date;
   updated_at: Date;
@@ -66,6 +68,7 @@ const toEntry = (row: DbRunHistoryRow): RunHistoryEntry => ({
   draftOutput: row.draft_output,
   generatedOutput: row.generated_output,
   finalOutput: row.final_output,
+  sources: row.sources ?? [],
   ...(row.approval_payload ? { approval: row.approval_payload } : {}),
   createdAt: toIso(row.created_at),
   updatedAt: toIso(row.updated_at)
@@ -97,10 +100,16 @@ const ensureHistoryTable = async () => {
       draft_output text not null default '',
       generated_output text not null default '',
       final_output text not null default '',
+      sources jsonb not null default '[]'::jsonb,
       approval_payload jsonb,
       created_at timestamptz not null default now(),
       updated_at timestamptz not null default now()
     );
+  `);
+
+  await activePool.query(`
+    alter table wandr_run_history
+      add column if not exists sources jsonb not null default '[]'::jsonb;
   `);
 
   await activePool.query(`
@@ -141,9 +150,10 @@ export const saveRunHistory = async (input: SaveRunHistoryInput): Promise<RunHis
         draft_output,
         generated_output,
         final_output,
+        sources,
         approval_payload
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       on conflict (thread_id)
       do update set
         message = excluded.message,
@@ -153,6 +163,7 @@ export const saveRunHistory = async (input: SaveRunHistoryInput): Promise<RunHis
         draft_output = excluded.draft_output,
         generated_output = excluded.generated_output,
         final_output = excluded.final_output,
+        sources = excluded.sources,
         approval_payload = excluded.approval_payload,
         updated_at = now()
       where wandr_run_history.user_id = excluded.user_id
@@ -168,6 +179,7 @@ export const saveRunHistory = async (input: SaveRunHistoryInput): Promise<RunHis
       input.draftOutput,
       input.generatedOutput,
       input.finalOutput,
+      JSON.stringify(input.sources),
       input.approval ? JSON.stringify(input.approval) : null
     ]
   );

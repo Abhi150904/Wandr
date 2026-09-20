@@ -43,6 +43,7 @@ describe("api app", () => {
         database: expect.any(String),
         clerk: expect.any(String),
         gemini: expect.any(String),
+        tavily: expect.any(String),
         openWeather: expect.any(String),
         webOrigin: expect.any(String)
       })
@@ -88,6 +89,7 @@ describe("api app", () => {
         draftOutput: "Draft",
         approvalRequest: "Review it",
         supervisorReasoning: "Planning",
+        sources: [],
         expectedResponse: {
           approved: true
         }
@@ -121,6 +123,7 @@ describe("api app", () => {
       draftOutput: "Draft",
       generatedOutput: "Draft",
       finalOutput: "",
+      sources: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -135,7 +138,8 @@ describe("api app", () => {
         supervisorReasoning: "Planning",
         approved: true,
         generatedOutput: "Final",
-        finalOutput: "Final"
+        finalOutput: "Final",
+        sources: []
       }
     });
 
