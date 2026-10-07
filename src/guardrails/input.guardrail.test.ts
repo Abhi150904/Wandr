@@ -50,4 +50,11 @@ describe("input guardrail", () => {
     expect(result.guardrailAllowed).toBe(false);
     expect(result.guardrailReason).toContain("unsafe");
   });
+
+  it("allows empty destination queries without crashing", async () => {
+    // Gemini should not be called for empty queries; ensure no rejection.
+    const result = await inputGuardrail(createState("   "));
+    expect(result.guardrailAllowed).toBe(true);
+    expect(result.guardrailReason).toContain("Empty query");
+  });
 });
