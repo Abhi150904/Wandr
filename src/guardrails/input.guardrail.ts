@@ -88,16 +88,14 @@ const fallbackGuardrailDecision = (userQuery: string): GuardrailDecision => {
 };
 
 export const inputGuardrail = async (state: AgentState): Promise<AgentStateUpdate> => {
-  // Early exit for empty or whitespace‑only queries to avoid null‑pointer crashes.
-  if (!state.userQuery || state.userQuery.trim() === "") {
-    const decision: GuardrailDecision = {
-      allowed: true,
-      reason: "Empty query provided; allowing by default."
-    };
+  // Early validation for empty or whitespace-only queries.
+  const trimmedQuery = state.userQuery.trim();
+  if (trimmedQuery.length === 0) {
+    const reason = "Destination cannot be empty.";
     return {
-      guardrailAllowed: decision.allowed,
-      guardrailReason: decision.reason,
-      messages: [new AIMessage(`Guardrail ${decision.allowed ? "allowed" : "blocked"} request: ${decision.reason}`)]
+      guardrailAllowed: false,
+      guardrailReason: reason,
+      messages: [new AIMessage(`Guardrail blocked request: ${reason}`)]
     };
   }
 
