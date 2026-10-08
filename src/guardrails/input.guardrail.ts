@@ -88,6 +88,17 @@ const fallbackGuardrailDecision = (userQuery: string): GuardrailDecision => {
 };
 
 export const inputGuardrail = async (state: AgentState): Promise<AgentStateUpdate> => {
+  // Early validation for empty or whitespace‑only queries
+  const trimmedQuery = state.userQuery.trim();
+  if (trimmedQuery.length === 0) {
+    const reason = "Destination cannot be empty.";
+    return {
+      guardrailAllowed: false,
+      guardrailReason: reason,
+      messages: [new AIMessage(`Guardrail blocked request: ${reason}`)]
+    };
+  }
+
   let decision: GuardrailDecision;
 
   try {

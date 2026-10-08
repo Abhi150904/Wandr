@@ -50,4 +50,12 @@ describe("input guardrail", () => {
     expect(result.guardrailAllowed).toBe(false);
     expect(result.guardrailReason).toContain("unsafe");
   });
+
+  it("blocks empty destination input with a clear validation message", async () => {
+    // No need to mock Gemini because the guardrail returns early
+    const result = await inputGuardrail(createState("   "));
+
+    expect(result.guardrailAllowed).toBe(false);
+    expect(result.guardrailReason).toBe("Destination cannot be empty.");
+  });
 });
